@@ -1,0 +1,266 @@
+:root {
+  --text: #4a4750;
+  --text-h: #08060d;
+  --bg: #f4f3f6;
+  --panel-bg: #ffffff;
+  --border: #e0dee5;
+  --key-bg: #ffffff;
+  --key-bg-inert: #ebeaee;
+  --key-border: #d3d1d9;
+  --accent: #7c3aed;
+  --accent-contrast: #ffffff;
+  --danger: #d1435b;
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 16px/1.45 var(--sans);
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #b8b5c0;
+    --text-h: #f3f2f6;
+    --bg: #121218;
+    --panel-bg: #1b1b23;
+    --border: #2c2c37;
+    --key-bg: #23232e;
+    --key-bg-inert: #191920;
+    --key-border: #34343f;
+    --accent: #a78bfa;
+    --accent-contrast: #14131a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+h1, h2 {
+  color: var(--text-h);
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+p {
+  margin: 0;
+}
+
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.app__header p {
+  color: var(--text);
+  margin-top: 6px;
+}
+
+.app__controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.panel hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  width: 100%;
+  margin: 2px 0;
+}
+
+.field span {
+  color: var(--text);
+}
+
+.field select,
+.field input[type='text'],
+.field input[type='number'],
+.field input:not([type]) {
+  font: inherit;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--key-border);
+  background: var(--key-bg);
+  color: var(--text-h);
+}
+
+.field input[type='file'] {
+  font-size: 12px;
+}
+
+.root-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.root-controls .field {
+  flex: 1;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--danger);
+  padding: 0;
+  text-align: left;
+  font-weight: 500;
+  font-size: 13px;
+  text-decoration: underline;
+}
+
+details {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+details summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.error {
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.tuning-description {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.volume-control input[type='range'] {
+  width: 100%;
+}
+
+.keyboard-view {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.keyboard-view__row {
+  display: flex;
+  gap: 6px;
+}
+
+.key-cap {
+  min-width: 34px;
+  height: 56px;
+  background: var(--key-bg-inert);
+  border: 1px solid var(--key-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: var(--text);
+  transition: background 0.05s, transform 0.05s;
+}
+
+.key-cap__physical {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 9px;
+  opacity: 0.6;
+}
+
+.key-cap__note {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.key-cap--musical {
+  background: var(--key-bg);
+  border-color: var(--accent);
+}
+
+.key-cap--pressed {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(1px);
+}
+
+.key-cap--pressed .key-cap__note,
+.key-cap--pressed .key-cap__physical {
+  color: var(--accent-contrast);
+}
+
+@media (max-width: 900px) {
+  .keyboard-view__row {
+    min-width: 760px;
+  }
+}
