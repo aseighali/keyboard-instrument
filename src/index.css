@@ -112,6 +112,17 @@ p {
   color: var(--text);
 }
 
+.field--checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.field--checkbox input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+}
+
 .field select,
 .field input[type='text'],
 .field input[type='number'],
@@ -194,8 +205,14 @@ details summary {
   line-height: 1.4;
 }
 
-.volume-control input[type='range'] {
+.field input[type='range'] {
   width: 100%;
+}
+
+.reverb-control {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .keyboard-view {

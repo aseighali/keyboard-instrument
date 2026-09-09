@@ -3,17 +3,23 @@ import { KeyboardView } from './components/KeyboardView';
 import { TuningSelector } from './components/TuningSelector';
 import { InstrumentSelector } from './components/InstrumentSelector';
 import { VolumeControl } from './components/VolumeControl';
+import { ReverbControl } from './components/ReverbControl';
 import { useAudioEngine } from './hooks/useAudioEngine';
 import { useKeyboardInput } from './hooks/useKeyboardInput';
 import { useSoundfonts } from './hooks/useSoundfonts';
 import { usePreloadedInstruments, type SoundfontKit } from './hooks/usePreloadedInstruments';
+import { usePremiumInstruments, type PremiumLibraryId } from './hooks/usePremiumInstruments';
 import { makeRoot } from './tuning/notes';
 import type { RootConfig } from './tuning/types';
 import { DEFAULT_TUNING_CHOICE, buildTuningSystem, type TuningChoice } from './tuning/tuningChoice';
 import { DEFAULT_ROW_LAYOUT, compileKeyMap, type RowLayout } from './tuning/keyMap';
-import { BUILTIN_INSTRUMENTS, type Instrument, type SoundfontInstrument } from './audio/instruments';
+import type { Instrument, SoundfontInstrument } from './audio/instruments';
 import { listPresets, savePreset, deletePreset, type StoredPreset } from './audio/PresetStore';
 import { listSounds, saveSound, deleteSound, type StoredSound } from './audio/SampleStore';
+import { REVERB_PRESETS, DEFAULT_REVERB_PRESET_ID, type ReverbParams, type ReverbPresetId } from './audio/reverbPresets';
+import { DEFAULT_DYNAMICS_INTENSITY } from './audio/dynamics';
+
+const DEFAULT_REVERB_PRESET = REVERB_PRESETS.find((p) => p.id === DEFAULT_REVERB_PRESET_ID)!;
 
 export default function App() {
   const engine = useAudioEngine();
@@ -26,13 +32,24 @@ export default function App() {
   const [presets, setPresets] = useState<StoredPreset[]>([]);
   const [sounds, setSounds] = useState<StoredSound[]>([]);
   const [sampleInstruments, setSampleInstruments] = useState<Instrument[]>([]);
-  const [selectedInstrumentId, setSelectedInstrumentId] = useState<string>(BUILTIN_INSTRUMENTS[0].id);
+  const [selectedInstrumentId, setSelectedInstrumentId] = useState<string>('');
   const [activeSoundfontInstrument, setActiveSoundfontInstrument] = useState<SoundfontInstrument | null>(null);
   const [activePreloadedName, setActivePreloadedName] = useState<string | null>(null);
+  const [activePremium, setActivePremium] = useState<{ libraryId: PremiumLibraryId; name: string | null } | null>(
+    null,
+  );
   const [soundfontKit, setSoundfontKit] = useState<SoundfontKit>('MusyngKite');
+
+  const [reverbPresetId, setReverbPresetId] = useState<ReverbPresetId>(DEFAULT_REVERB_PRESET_ID);
+  const [reverbAmount, setReverbAmount] = useState<number>(DEFAULT_REVERB_PRESET.amount);
+  const [reverbCustomParams, setReverbCustomParams] = useState<ReverbParams>(DEFAULT_REVERB_PRESET.params);
+  const [dynamicsEnabled, setDynamicsEnabled] = useState(true);
+  const [dynamicsIntensity, setDynamicsIntensity] = useState(DEFAULT_DYNAMICS_INTENSITY);
+  const [pullOffEnabled, setPullOffEnabled] = useState(false);
 
   const soundfonts = useSoundfonts(engine);
   const preloaded = usePreloadedInstruments(engine);
+  const premium = usePremiumInstruments(engine);
 
   useEffect(() => {
     listPresets().then(setPresets).catch(() => setPresets([]));
@@ -60,21 +77,49 @@ export default function App() {
     };
   }, [sounds, engine]);
 
-  const allInstruments = useMemo(() => [...BUILTIN_INSTRUMENTS, ...sampleInstruments], [sampleInstruments]);
   const flatInstrument = useMemo(
-    () => allInstruments.find((i) => i.id === selectedInstrumentId) ?? BUILTIN_INSTRUMENTS[0],
-    [allInstruments, selectedInstrumentId],
+    () => sampleInstruments.find((i) => i.id === selectedInstrumentId) ?? null,
+    [sampleInstruments, selectedInstrumentId],
   );
   const selectedInstrument = activeSoundfontInstrument ?? flatInstrument;
 
   const tuning = useMemo(() => buildTuningSystem(tuningChoice, presets), [tuningChoice, presets]);
   const keyMap = useMemo(() => compileKeyMap(rowLayout, tuning), [rowLayout, tuning]);
 
-  const pressed = useKeyboardInput(engine, tuning, root, selectedInstrument, keyMap);
+  const pressed = useKeyboardInput(
+    engine,
+    tuning,
+    root,
+    selectedInstrument,
+    keyMap,
+    dynamicsEnabled,
+    dynamicsIntensity,
+    pullOffEnabled,
+  );
 
   useEffect(() => {
     engine.setVolume(volume);
   }, [engine, volume]);
+
+  useEffect(() => {
+    engine.setReverbAmount(reverbAmount);
+  }, [engine, reverbAmount]);
+
+  useEffect(() => {
+    const params = reverbPresetId === 'custom' ? reverbCustomParams : REVERB_PRESETS.find((p) => p.id === reverbPresetId)!.params;
+    engine.setReverbParams(params).catch((err) => console.error('Failed to apply reverb params', err));
+  }, [engine, reverbPresetId, reverbCustomParams]);
+
+  function handleReverbPresetChange(id: ReverbPresetId) {
+    const previous = REVERB_PRESETS.find((p) => p.id === reverbPresetId);
+    setReverbPresetId(id);
+    if (id === 'custom') {
+      if (previous) setReverbCustomParams(previous.params);
+    } else {
+      const preset = REVERB_PRESETS.find((p) => p.id === id)!;
+      setReverbAmount(preset.amount);
+    }
+  }
 
   async function handleSavePreset(name: string, cents: number[]) {
     const preset: StoredPreset = { id: `preset-${Date.now()}`, name, cents };
@@ -104,13 +149,14 @@ export default function App() {
   async function handleDeleteSound(id: string) {
     await deleteSound(id);
     setSounds((prev) => prev.filter((s) => s.id !== id));
-    if (selectedInstrumentId === id) setSelectedInstrumentId(BUILTIN_INSTRUMENTS[0].id);
+    if (selectedInstrumentId === id) setSelectedInstrumentId('');
   }
 
   function handleSelectInstrument(id: string) {
     setSelectedInstrumentId(id);
     setActiveSoundfontInstrument(null);
     setActivePreloadedName(null);
+    setActivePremium(null);
   }
 
   function handleBrowseSoundfont(fileId: string) {
@@ -122,6 +168,7 @@ export default function App() {
       const instrument = await soundfonts.selectProgram(fileId, programName);
       setActiveSoundfontInstrument(instrument);
       setActivePreloadedName(null);
+      setActivePremium(null);
     } catch (err) {
       console.error('Failed to load SoundFont instrument', err);
     }
@@ -143,10 +190,29 @@ export default function App() {
       const instrument = await preloaded.selectInstrument(name, soundfontKit);
       setActiveSoundfontInstrument(instrument);
       setActivePreloadedName(name);
+      setActivePremium(null);
     } catch (err) {
       console.error('Failed to load preloaded instrument', err);
     }
   }
+
+  async function handleSelectPremiumInstrument(libraryId: PremiumLibraryId, name: string | null) {
+    try {
+      const instrument = await premium.selectInstrument(libraryId, name);
+      setActiveSoundfontInstrument(instrument);
+      setActivePreloadedName(null);
+      setSelectedInstrumentId('');
+      setActivePremium({ libraryId, name });
+    } catch (err) {
+      console.error('Failed to load premium instrument', err);
+    }
+  }
+
+  // Default to the best-quality option (sampled grand piano) on first load.
+  useEffect(() => {
+    handleSelectPremiumInstrument('splendid-piano', null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="app">
@@ -170,11 +236,15 @@ export default function App() {
           pianoUnavailable={keyMap.pianoUnavailable}
         />
         <InstrumentSelector
-          instruments={allInstruments}
+          instruments={sampleInstruments}
           selectedId={selectedInstrumentId}
           onSelect={handleSelectInstrument}
           onUpload={handleUploadSound}
           onDelete={handleDeleteSound}
+          premiumLibraries={premium.libraries}
+          loadingPremiumKey={premium.loadingKey}
+          activePremium={activePremium}
+          onSelectPremiumInstrument={handleSelectPremiumInstrument}
           soundfontFiles={soundfonts.files}
           soundfontPrograms={soundfonts.programsByFile}
           loadingSoundfontId={soundfonts.loadingFileId}
@@ -196,7 +266,58 @@ export default function App() {
         />
         <section className="panel">
           <h2>Output</h2>
+          <label className="field field--checkbox">
+            <input
+              type="checkbox"
+              checked={dynamicsEnabled}
+              onChange={(e) => setDynamicsEnabled(e.target.checked)}
+            />
+            <span>Dynamics from typing speed</span>
+          </label>
+          <p className="hint">
+            No computer keyboard reports how hard a key was pressed, so this approximates it from
+            how fast you're typing &mdash; faster passages play louder/brighter, like a real
+            instrument responding to how hard you play. Turn off for flat, constant-velocity
+            playback instead.
+          </p>
+          {dynamicsEnabled && (
+            <label className="field">
+              <span>Dynamics intensity ({Math.round(dynamicsIntensity * 100)}%)</span>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={dynamicsIntensity}
+                onChange={(e) => setDynamicsIntensity(Number(e.target.value))}
+              />
+            </label>
+          )}
+          <hr />
+          <label className="field field--checkbox">
+            <input
+              type="checkbox"
+              checked={pullOffEnabled}
+              onChange={(e) => setPullOffEnabled(e.target.checked)}
+            />
+            <span>Pull-off (guitar-style)</span>
+          </label>
+          <p className="hint">
+            While holding a note, press and release another note without releasing the first
+            &mdash; on release, the held note sounds again on its own, like lifting a fretting
+            finger off a guitar string to reveal the note underneath.
+          </p>
+          <hr />
           <VolumeControl volume={volume} onChange={setVolume} />
+          <hr />
+          <ReverbControl
+            presetId={reverbPresetId}
+            onPresetChange={handleReverbPresetChange}
+            amount={reverbAmount}
+            onAmountChange={setReverbAmount}
+            customParams={reverbCustomParams}
+            onCustomParamsChange={setReverbCustomParams}
+          />
         </section>
       </div>
 

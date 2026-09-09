@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
-import { BUILTIN_INSTRUMENTS, type Instrument } from '../audio/instruments';
+import type { Instrument } from '../audio/instruments';
 import { PITCH_CLASSES } from '../tuning/notes';
 import type { SoundfontFile } from '../hooks/useSoundfonts';
 import { displayInstrumentName, type SoundfontKit } from '../hooks/usePreloadedInstruments';
+import type { PremiumLibraryDef, PremiumLibraryId } from '../hooks/usePremiumInstruments';
 
 interface InstrumentSelectorProps {
   instruments: Instrument[];
@@ -10,6 +11,11 @@ interface InstrumentSelectorProps {
   onSelect: (id: string) => void;
   onUpload: (file: File, name: string, rootPitchClass: string, rootOctave: number) => Promise<void>;
   onDelete: (id: string) => void;
+
+  premiumLibraries: PremiumLibraryDef[];
+  loadingPremiumKey: string | null;
+  activePremium: { libraryId: PremiumLibraryId; name: string | null } | null;
+  onSelectPremiumInstrument: (libraryId: PremiumLibraryId, name: string | null) => void;
 
   soundfontFiles: SoundfontFile[];
   soundfontPrograms: Record<string, string[]>;
@@ -34,6 +40,10 @@ export function InstrumentSelector({
   onSelect,
   onUpload,
   onDelete,
+  premiumLibraries,
+  loadingPremiumKey,
+  activePremium,
+  onSelectPremiumInstrument,
   soundfontFiles,
   soundfontPrograms,
   loadingSoundfontId,
@@ -62,7 +72,12 @@ export function InstrumentSelector({
   const [sfError, setSfError] = useState<string | null>(null);
   const [browsingFileId, setBrowsingFileId] = useState<string | null>(activeSoundfont?.fileId ?? null);
 
+  const [premiumLibraryChoice, setPremiumLibraryChoice] = useState<PremiumLibraryId | ''>(
+    activePremium?.libraryId ?? '',
+  );
+
   const sampleInstruments = instruments.filter((i) => i.kind === 'sample');
+  const chosenLibrary = premiumLibraries.find((l) => l.id === premiumLibraryChoice) ?? null;
 
   async function handleUpload() {
     const file = fileRef.current?.files?.[0];
@@ -102,38 +117,76 @@ export function InstrumentSelector({
     }
   }
 
+  function handlePremiumLibraryChange(id: PremiumLibraryId | '') {
+    setPremiumLibraryChoice(id);
+    if (!id) return;
+    const lib = premiumLibraries.find((l) => l.id === id);
+    if (lib && lib.names === null) onSelectPremiumInstrument(id, null);
+  }
+
   const browsingPrograms = browsingFileId ? soundfontPrograms[browsingFileId] : undefined;
 
   return (
     <section className="panel">
       <h2>Sound</h2>
 
+      <p className="hint">
+        Real sampled instruments from dedicated, purpose-built libraries (not a generic MIDI set) &mdash; the
+        best quality this app offers, no upload needed.
+      </p>
       <label className="field">
-        <span>Instrument</span>
-        <select value={selectedId} onChange={(e) => onSelect(e.target.value)}>
-          <optgroup label="Built-in instruments">
-            {BUILTIN_INSTRUMENTS.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name}
+        <span>Library</span>
+        <select
+          value={premiumLibraryChoice}
+          onChange={(e) => handlePremiumLibraryChange(e.target.value as PremiumLibraryId | '')}
+        >
+          <option value="">— pick a library —</option>
+          {premiumLibraries.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      {chosenLibrary && chosenLibrary.names && (
+        <label className="field">
+          <span>Sound</span>
+          <select
+            value={activePremium?.libraryId === chosenLibrary.id ? (activePremium.name ?? '') : ''}
+            onChange={(e) => e.target.value && onSelectPremiumInstrument(chosenLibrary.id, e.target.value)}
+          >
+            <option value="">— pick one ({chosenLibrary.names.length} available) —</option>
+            {chosenLibrary.names.map((n) => (
+              <option key={n} value={n}>
+                {displayInstrumentName(n)}
               </option>
             ))}
-          </optgroup>
-          {sampleInstruments.length > 0 && (
-            <optgroup label="Uploaded sounds">
+          </select>
+        </label>
+      )}
+      {loadingPremiumKey && <p className="hint">Loading…</p>}
+
+      <hr />
+
+      {sampleInstruments.length > 0 && (
+        <>
+          <label className="field">
+            <span>Uploaded sound</span>
+            <select value={selectedId} onChange={(e) => onSelect(e.target.value)}>
+              <option value="">— none —</option>
               {sampleInstruments.map((i) => (
                 <option key={i.id} value={i.id}>
                   {i.name}
                 </option>
               ))}
-            </optgroup>
+            </select>
+          </label>
+          {selectedId && sampleInstruments.some((i) => i.id === selectedId) && (
+            <button type="button" className="btn-link" onClick={() => onDelete(selectedId)}>
+              Delete this sound
+            </button>
           )}
-        </select>
-      </label>
-
-      {selectedId && sampleInstruments.some((i) => i.id === selectedId) && (
-        <button type="button" className="btn-link" onClick={() => onDelete(selectedId)}>
-          Delete this sound
-        </button>
+        </>
       )}
 
       <details>
@@ -181,8 +234,8 @@ export function InstrumentSelector({
       <hr />
 
       <p className="hint">
-        Real sampled instruments, streamed on first use from a free public sample library &mdash;
-        no upload needed, works immediately.
+        General MIDI instruments, streamed on first use from a free public sample library &mdash; wider
+        selection (guitars, organs, world instruments, ...) but lower quality than the libraries above.
       </p>
       <label className="field">
         <span>Quality</span>

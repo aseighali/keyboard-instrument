@@ -46,35 +46,62 @@ with three modes:
 Every physical key is shown on screen with its assigned note name; keys with no scale degree
 mapped to them render inert. Held keys highlight.
 
+## Ornaments
+
+- **Dorrab** — hold **Ctrl** while pressing a musical key to play a **dorrab** (دراب) instead of
+  a plain note: a Persian ornament, three fast strikes on the same pitch (the first two quick
+  and soft, the third stronger), compressed into roughly the space of a single note. Always
+  fires at a fixed neutral velocity, ignoring the "Dynamics from typing speed" setting.
+  Implemented in `AudioEngine.playDorrab` (`src/audio/AudioEngine.ts`).
+- **Pull-off** — an opt-in checkbox (Output panel). While holding a note, pressing and releasing
+  another note without releasing the first re-sounds the held note on release, guitar-style:
+  lifting a fretting finger off a string reveals the note still fretted underneath. Chains
+  correctly through more than two held notes. Implemented in `useKeyboardInput.ts`.
+
 ## Tuning systems
 
 - **Chromatic** — standard 12-tone equal temperament.
 - **Scale / Mode** — major, natural/harmonic/melodic minor, the modes, pentatonics, blues.
 - **Microtonal (N-EDO)** — any equal division of the octave (24 for quarter tones, etc).
-- **Iranian Dastgah** — the 7 main dastgahs plus 5 avaz of the Shur family, modeled as
-  cents-based 7-degree scales (`src/tuning/dastgah.ts`). This is a simplified equal-tempered
-  *approximation* for playability — real dastgah performance uses melodic movement (gushe) with
-  intonation that shifts contextually, which a fixed scale can't capture.
+- **Iranian Dastgah** — one dropdown covering its 7 **dastgah** (Shur, Mahur, Rast-Panjgah,
+  Homayun, Chahargah, Segah, Nava); Shur, the one dastgah with traditionally-named sibling
+  modes, groups into an `<optgroup>` offering "Shur itself" plus its 5 named **avaz** (Abu-Ata,
+  Bayat-e Tork, Afshari, Dashti, Bayat-e Esfahan) as clearly-nested sub-options, since the other
+  6 dastgahs have no traditionally-named avaz. Each entry is a fixed 7-degree equal-tempered
+  *approximation* (`src/tuning/dastgah.ts`) — real dastgah/avaz performance uses melodic
+  movement (gushe) with intonation that shifts contextually, which a fixed scale can't capture.
 - **Custom** — enter your own list of cent offsets from the root; saved scales persist in
   IndexedDB.
 
 ## Sounds
 
-All built-in instruments are synthesized in real time in the browser (Web Audio API, no sample
-files bundled with the app):
+Every instrument is a real sampled recording played back client-side (Web Audio API) — nothing
+is synthesized from scratch, so quality is bounded by the sample library, not by any DSP model.
 
-- **Piano, Santoor, Guitar** — a Karplus-Strong style plucked/struck string: a short noise burst
-  rings around a damped feedback delay loop tuned to the note's pitch, the same technique real
-  physical-modeling synths use for plucked/struck strings. Santoor sums two slightly detuned
-  strings per note (mirroring its multi-string courses) for a shimmering unison, and rings
-  longer than piano or guitar.
-- **Electric Piano** — 2-operator FM synthesis (sine carrier, sine modulator, decaying mod index).
-- **Organ** — additive synthesis, a handful of fixed-level harmonics (drawbar-style).
-- **Strings Pad** — three detuned sawtooths with a slow attack/release for a chorused pad.
-- **Bass** — a low-passed sawtooth.
-- **Sine / Triangle / Sawtooth / Square** — plain oscillators, useful as a pure pitch reference.
+### Premium sample libraries (default, best quality)
 
-You can also upload your own single-note sample (wav/mp3/ogg/etc). Tell it what pitch the sample
+Dedicated, purpose-built libraries streamed from `smplr`'s hosted sample sets — no upload
+needed, works the moment you pick one:
+
+- **Grand Piano** — `SplendidGrandPiano`, i.e. the Salamander Grand Piano (a real Steinway,
+  4 velocity layers) repackaged for the web. This is the default instrument on load.
+- **Electric Piano** — sampled CP80, Pianet T, Wurlitzer EP200, and TX81Z FM-piano patch.
+- **Double Bass** — Smolken, arco/pizzicato/switched.
+- **Mallet percussion** — VCSL mallets (marimba, vibraphone, xylophone, ...).
+- **Mellotron** — vintage tape samples.
+
+### General MIDI (wider selection, lower quality)
+
+The "Preloaded instrument" picker streams from all 128 General MIDI instruments (Benjamin
+Gleitzman's `midi-js-soundfonts`, via `smplr`'s `Soundfont` player) — covers everything the
+libraries above don't (guitars, organs, world instruments like dulcimer as a santoor
+substitute, ...) but is an older, single-velocity-layer, mp3-compressed sample set, so it
+sounds noticeably less real than the libraries above. A "Quality" toggle picks between
+`MusyngKite` (better sound, bigger download) and `FluidR3_GM` (smaller, faster).
+
+### Your own sounds
+
+You can upload your own single-note sample (wav/mp3/ogg/etc). Tell it what pitch the sample
 was recorded at and it's pitch-shifted across the keyboard from there via `playbackRate`.
 Uploaded sounds are stored in IndexedDB and persist across reloads in that browser profile.
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { RootConfig } from '../tuning/types';
 import { PITCH_CLASSES, makeRoot } from '../tuning/notes';
-import { MODES, DASTGAHS, type TuningChoice } from '../tuning/tuningChoice';
+import { MODES, DASTGAHS, defaultDastgahChoice, type TuningChoice } from '../tuning/tuningChoice';
 import type { StoredPreset } from '../audio/PresetStore';
 import type { RowLayout } from '../tuning/keyMap';
 
@@ -21,6 +21,23 @@ interface TuningSelectorProps {
 
 const OCTAVES = [2, 3, 4, 5, 6];
 
+/** One flat, browser-native `<select>`: plain top-level `<option>`s for dastgahs with no avaz,
+ *  and an `<optgroup>` for Shur (the one dastgah with named avaz) so "Shur itself" plus its 5
+ *  avaz are visibly grouped as its sub-options rather than looking like sibling dastgahs. */
+type DastgahOption = { value: string; name: string };
+type DastgahOptionEntry = DastgahOption | { groupLabel: string; options: DastgahOption[] };
+
+const DASTGAH_OPTION_ENTRIES: DastgahOptionEntry[] = DASTGAHS.map((d) => {
+  if (!d.avazes) return { value: `${d.id}|`, name: d.name };
+  return {
+    groupLabel: d.name,
+    options: [
+      { value: `${d.id}|`, name: `${d.name} itself` },
+      ...d.avazes.map((a) => ({ value: `${d.id}|${a.id}`, name: a.name })),
+    ],
+  };
+});
+
 export function TuningSelector({
   choice,
   onChange,
@@ -37,6 +54,8 @@ export function TuningSelector({
   const [customName, setCustomName] = useState('');
   const [customCents, setCustomCents] = useState('0, 150, 350, 500, 700, 850, 1050');
 
+  const dastgahChoice = choice.category === 'dastgah' ? choice : null;
+
   return (
     <section className="panel">
       <h2>Tuning system</h2>
@@ -50,7 +69,7 @@ export function TuningSelector({
             if (category === 'chromatic') onChange({ category });
             else if (category === 'scale') onChange({ category, modeId: MODES[0].id });
             else if (category === 'microtonal') onChange({ category, edo: 24 });
-            else if (category === 'dastgah') onChange({ category, dastgahId: DASTGAHS[0].id });
+            else if (category === 'dastgah') onChange(defaultDastgahChoice(DASTGAHS[0].id));
             else onChange({ category: 'custom', presetId: presets[0]?.id ?? null });
           }}
         >
@@ -88,18 +107,31 @@ export function TuningSelector({
         </label>
       )}
 
-      {choice.category === 'dastgah' && (
+      {dastgahChoice && (
         <label className="field">
           <span>Dastgah / Avaz</span>
           <select
-            value={choice.dastgahId}
-            onChange={(e) => onChange({ category: 'dastgah', dastgahId: e.target.value })}
+            value={`${dastgahChoice.dastgahId}|${dastgahChoice.avazId ?? ''}`}
+            onChange={(e) => {
+              const [dastgahId, avazIdRaw] = e.target.value.split('|');
+              onChange({ category: 'dastgah', dastgahId, avazId: avazIdRaw || null });
+            }}
           >
-            {DASTGAHS.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
+            {DASTGAH_OPTION_ENTRIES.map((entry) =>
+              'groupLabel' in entry ? (
+                <optgroup key={entry.groupLabel} label={entry.groupLabel}>
+                  {entry.options.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : (
+                <option key={entry.value} value={entry.value}>
+                  {entry.name}
+                </option>
+              ),
+            )}
           </select>
         </label>
       )}

@@ -10,13 +10,29 @@ import type { TuningSystem } from './types';
  * tones ~200c, and augmented seconds ~300c where a dastgah is known for that characteristic
  * color) rather than an exact 24-TET quarter-tone grid, but they should be read as an
  * equal-tempered *approximation*, not a musicological transcription.
+ *
+ * Only Shur has named avaz in the conventional classification (Abu Ata, Bayat-e Tork, Afshari,
+ * Dashti, Bayat-e Esfahan) - the other 6 dastgahs have no `avazes`. Note: several sources (e.g.
+ * Encyclopaedia Iranica) classify Bayat-e Esfahan as related to Homayun rather than Shur; it's
+ * kept under Shur here to match this app's pre-existing framing, but that classification is
+ * genuinely disputed in the literature.
  */
+export interface AvazDef {
+  id: string;
+  name: string;
+  /** Cumulative cents for degrees 2-7 (degree 1 / the tonic is always 0 and implicit). */
+  degrees: number[];
+  description: string;
+}
+
 export interface DastgahDef {
   id: string;
   name: string;
   /** Cumulative cents for degrees 2-7 (degree 1 / the tonic is always 0 and implicit). */
   degrees: number[];
   description: string;
+  /** Only Shur has these in the conventional classification. */
+  avazes?: AvazDef[];
 }
 
 export const DASTGAHS: DastgahDef[] = [
@@ -25,6 +41,40 @@ export const DASTGAHS: DastgahDef[] = [
     name: 'Shur',
     degrees: [150, 350, 500, 700, 850, 1050],
     description: 'Soft, ambiguous neutral seconds throughout; the root of the Shur family.',
+    avazes: [
+      {
+        id: 'abu-ata',
+        name: 'Abu-Ata',
+        degrees: [150, 350, 500, 650, 850, 1050],
+        description: 'Simple, folk-adjacent Shur-family avaz.',
+      },
+      {
+        id: 'bayat-e-tork',
+        name: 'Bayat-e Tork',
+        degrees: [200, 350, 500, 700, 850, 1050],
+        description: 'Shur-family avaz with a firmer, more assertive 2nd degree.',
+      },
+      {
+        id: 'afshari',
+        name: 'Afshari',
+        degrees: [150, 300, 500, 700, 850, 1050],
+        description: 'Delicate Shur-family avaz, closely related to Bayat-e Tork.',
+      },
+      {
+        id: 'dashti',
+        name: 'Dashti',
+        degrees: [150, 350, 500, 700, 850, 1050],
+        description: 'Lyrical Shur-family avaz, very close to Shur itself.',
+      },
+      {
+        id: 'bayat-e-esfahan',
+        name: 'Bayat-e Esfahan',
+        degrees: [150, 350, 550, 650, 850, 1050],
+        description:
+          'Distinguished from the rest of the Shur family by a natural (non-neutral) 6th. Grouped here with Shur ' +
+          "to match this app's existing framing, though several sources instead classify it as related to Homayun.",
+      },
+    ],
   },
   {
     id: 'mahur',
@@ -62,47 +112,28 @@ export const DASTGAHS: DastgahDef[] = [
     degrees: [150, 350, 500, 650, 850, 1000],
     description: 'Cousin of Shur with a distinct pentachord shape in the upper degrees.',
   },
-  {
-    id: 'bayat-e-tork',
-    name: 'Bayat-e Tork (avaz)',
-    degrees: [200, 350, 500, 700, 850, 1050],
-    description: 'Shur-family avaz with a firmer, more assertive 2nd degree.',
-  },
-  {
-    id: 'afshari',
-    name: 'Afshari (avaz)',
-    degrees: [150, 300, 500, 700, 850, 1050],
-    description: 'Delicate Shur-family avaz, closely related to Bayat-e Tork.',
-  },
-  {
-    id: 'dashti',
-    name: 'Dashti (avaz)',
-    degrees: [150, 350, 500, 700, 850, 1050],
-    description: 'Lyrical Shur-family avaz, very close to Shur itself.',
-  },
-  {
-    id: 'abu-ata',
-    name: 'Abu-Ata (avaz)',
-    degrees: [150, 350, 500, 650, 850, 1050],
-    description: 'Simple, folk-adjacent Shur-family avaz.',
-  },
-  {
-    id: 'bayat-e-esfahan',
-    name: 'Bayat-e Esfahan (avaz)',
-    degrees: [150, 350, 550, 650, 850, 1050],
-    description: 'Distinguished from the rest of the Shur family by a natural (non-neutral) 6th.',
-  },
 ];
 
-export function buildDastgah(id: string): TuningSystem {
-  const def = DASTGAHS.find((d) => d.id === id) ?? DASTGAHS[0];
-  const cents = [0, ...def.degrees];
+/** A fully-specified default selection for a newly-picked dastgah: itself, no avaz. */
+export function defaultDastgahSelection(dastgahId: string): { dastgahId: string; avazId: string | null } {
+  const dastgah = DASTGAHS.find((d) => d.id === dastgahId) ?? DASTGAHS[0];
+  return { dastgahId: dastgah.id, avazId: null };
+}
+
+export function buildDastgah(dastgahId: string, avazId: string | null): TuningSystem {
+  const dastgah = DASTGAHS.find((d) => d.id === dastgahId) ?? DASTGAHS[0];
+  const avaz = avazId ? dastgah.avazes?.find((a) => a.id === avazId) : undefined;
+  const group = avaz ?? dastgah;
+
+  const cents = [0, ...group.degrees];
+  const name = avaz ? `${dastgah.name} / ${avaz.name} (avaz)` : dastgah.name;
+
   return {
-    id: `dastgah-${def.id}`,
-    name: def.name,
+    id: `dastgah-${dastgah.id}${avaz ? `-${avaz.id}` : ''}`,
+    name,
     category: 'dastgah',
     pitchClassBased: false,
     slots: cents.map((c, i) => ({ cents: c, label: `${i + 1}` })),
-    description: def.description,
+    description: group.description,
   };
 }
