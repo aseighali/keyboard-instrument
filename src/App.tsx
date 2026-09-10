@@ -238,111 +238,112 @@ export default function App() {
         <p>Play your computer keyboard like an instrument. Click anywhere once to enable audio, then start typing.</p>
       </header>
 
-      <div className="app__controls">
-        <TuningSelector
-          choice={tuningChoice}
-          onChange={setTuningChoice}
-          root={root}
-          onRootChange={setRoot}
-          presets={presets}
-          onSavePreset={handleSavePreset}
-          onDeletePreset={handleDeletePreset}
-          description={tuning.description}
-          rowLayout={rowLayout}
-          onRowLayoutChange={setRowLayout}
-          pianoUnavailable={keyMap.pianoUnavailable}
-        />
-        <InstrumentSelector
-          instruments={sampleInstruments}
-          selectedId={selectedInstrumentId}
-          onSelect={handleSelectInstrument}
-          onUpload={handleUploadSound}
-          onDelete={handleDeleteSound}
-          premiumLibraries={premium.libraries}
-          loadingPremiumKey={premium.loadingKey}
-          activePremium={activePremium}
-          onSelectPremiumInstrument={handleSelectPremiumInstrument}
-          soundfontFiles={soundfonts.files}
-          soundfontPrograms={soundfonts.programsByFile}
-          loadingSoundfontId={soundfonts.loadingFileId}
-          activeSoundfont={
-            activeSoundfontInstrument
-              ? { fileId: activeSoundfontInstrument.id.split('::')[0], programName: activeSoundfontInstrument.name }
-              : null
-          }
-          onBrowseSoundfont={handleBrowseSoundfont}
-          onSelectSoundfontProgram={handleSelectSoundfontProgram}
-          onUploadSoundfont={handleUploadSoundfont}
-          onDeleteSoundfont={handleDeleteSoundfont}
-          preloadedInstrumentNames={preloaded.instrumentNames}
-          loadingPreloadedName={preloaded.loadingName}
-          activePreloadedName={activePreloadedName}
-          soundfontKit={soundfontKit}
-          onSoundfontKitChange={setSoundfontKit}
-          onSelectPreloadedInstrument={handleSelectPreloadedInstrument}
-        />
-        <details className="panel" open>
-          <summary>
-            <h2>Settings</h2>
-          </summary>
-          <label className="field field--checkbox">
-            <input
-              type="checkbox"
-              checked={dynamicsEnabled}
-              onChange={(e) => setDynamicsEnabled(e.target.checked)}
-            />
-            <span className="field-label">
-              Dynamics from typing speed
-              <InfoTooltip>
-                No computer keyboard reports how hard a key was pressed, so this approximates it
-                from how fast you're typing: faster passages play louder/brighter, like a real
-                instrument responding to how hard you play. Turn off for flat, constant-velocity
-                playback instead.
-              </InfoTooltip>
-            </span>
-          </label>
-          {dynamicsEnabled && (
-            <label className="field">
-              <span>Dynamics intensity ({Math.round(dynamicsIntensity * 100)}%)</span>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={dynamicsIntensity}
-                onChange={(e) => setDynamicsIntensity(Number(e.target.value))}
-              />
-            </label>
-          )}
-          <hr />
-          <label className="field field--checkbox">
-            <input
-              type="checkbox"
-              checked={pullOffEnabled}
-              onChange={(e) => setPullOffEnabled(e.target.checked)}
-            />
-            <span className="field-label">
-              Pull-off (guitar-style)
-              <InfoTooltip>
-                While holding a note, press and release another note without releasing the first:
-                on release, the held note sounds again on its own, like lifting a fretting finger
-                off a guitar string to reveal the note underneath.
-              </InfoTooltip>
-            </span>
-          </label>
-          <hr />
-          <VolumeControl volume={volume} onChange={setVolume} />
-          <hr />
-          <ReverbControl
-            presetId={reverbPresetId}
-            onPresetChange={handleReverbPresetChange}
-            amount={reverbAmount}
-            onAmountChange={setReverbAmount}
-            customParams={reverbCustomParams}
-            onCustomParamsChange={setReverbCustomParams}
+      <details className="controls-toggle">
+        <summary>Tuning, Sound &amp; Settings</summary>
+        <div className="app__controls">
+          <TuningSelector
+            choice={tuningChoice}
+            onChange={setTuningChoice}
+            root={root}
+            onRootChange={setRoot}
+            presets={presets}
+            onSavePreset={handleSavePreset}
+            onDeletePreset={handleDeletePreset}
+            description={tuning.description}
+            rowLayout={rowLayout}
+            onRowLayoutChange={setRowLayout}
+            pianoUnavailable={keyMap.pianoUnavailable}
           />
-        </details>
-      </div>
+          <InstrumentSelector
+            instruments={sampleInstruments}
+            selectedId={selectedInstrumentId}
+            onSelect={handleSelectInstrument}
+            onUpload={handleUploadSound}
+            onDelete={handleDeleteSound}
+            premiumLibraries={premium.libraries}
+            loadingPremiumKey={premium.loadingKey}
+            activePremium={activePremium}
+            onSelectPremiumInstrument={handleSelectPremiumInstrument}
+            soundfontFiles={soundfonts.files}
+            soundfontPrograms={soundfonts.programsByFile}
+            loadingSoundfontId={soundfonts.loadingFileId}
+            activeSoundfont={
+              activeSoundfontInstrument
+                ? { fileId: activeSoundfontInstrument.id.split('::')[0], programName: activeSoundfontInstrument.name }
+                : null
+            }
+            onBrowseSoundfont={handleBrowseSoundfont}
+            onSelectSoundfontProgram={handleSelectSoundfontProgram}
+            onUploadSoundfont={handleUploadSoundfont}
+            onDeleteSoundfont={handleDeleteSoundfont}
+            preloadedInstrumentNames={preloaded.instrumentNames}
+            loadingPreloadedName={preloaded.loadingName}
+            activePreloadedName={activePreloadedName}
+            soundfontKit={soundfontKit}
+            onSoundfontKitChange={setSoundfontKit}
+            onSelectPreloadedInstrument={handleSelectPreloadedInstrument}
+          />
+          <section className="panel">
+            <h2>Settings</h2>
+            <label className="field field--checkbox">
+              <input
+                type="checkbox"
+                checked={dynamicsEnabled}
+                onChange={(e) => setDynamicsEnabled(e.target.checked)}
+              />
+              <span className="field-label">
+                Dynamics from typing speed
+                <InfoTooltip>
+                  No computer keyboard reports how hard a key was pressed, so this approximates it
+                  from how fast you're typing: faster passages play louder/brighter, like a real
+                  instrument responding to how hard you play. Turn off for flat, constant-velocity
+                  playback instead.
+                </InfoTooltip>
+              </span>
+            </label>
+            {dynamicsEnabled && (
+              <label className="field">
+                <span>Dynamics intensity ({Math.round(dynamicsIntensity * 100)}%)</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={dynamicsIntensity}
+                  onChange={(e) => setDynamicsIntensity(Number(e.target.value))}
+                />
+              </label>
+            )}
+            <hr />
+            <label className="field field--checkbox">
+              <input
+                type="checkbox"
+                checked={pullOffEnabled}
+                onChange={(e) => setPullOffEnabled(e.target.checked)}
+              />
+              <span className="field-label">
+                Pull-off (guitar-style)
+                <InfoTooltip>
+                  While holding a note, press and release another note without releasing the first:
+                  on release, the held note sounds again on its own, like lifting a fretting finger
+                  off a guitar string to reveal the note underneath.
+                </InfoTooltip>
+              </span>
+            </label>
+            <hr />
+            <VolumeControl volume={volume} onChange={setVolume} />
+            <hr />
+            <ReverbControl
+              presetId={reverbPresetId}
+              onPresetChange={handleReverbPresetChange}
+              amount={reverbAmount}
+              onAmountChange={setReverbAmount}
+              customParams={reverbCustomParams}
+              onCustomParamsChange={setReverbCustomParams}
+            />
+          </section>
+        </div>
+      </details>
 
       <KeyboardView tuning={tuning} root={root} pressed={pressed} keyMap={keyMap} />
     </div>
