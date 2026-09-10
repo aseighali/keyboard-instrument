@@ -23,3 +23,14 @@ export function midiToName(midiNote: number): string {
   const octave = Math.floor(midiNote / 12) - 1;
   return `${PITCH_CLASSES[pitchIndex]}${octave}`;
 }
+
+/** Nearest Western note name for an arbitrary offset (in semitones) from a root pitch, with any
+ *  leftover fraction shown as a cents deviation, e.g. "D4+27" for a degree that doesn't land
+ *  exactly on a semitone (custom scales, microtonal/EDO, dastgah). */
+export function nearestNoteLabel(root: RootConfig, semitonesFromRoot: number): string {
+  const rootMidi = midiNumberOf(root.pitchClass, root.octave);
+  const nearestSemitone = Math.round(semitonesFromRoot);
+  const noteName = midiToName(rootMidi + nearestSemitone);
+  const deviationCents = Math.round((semitonesFromRoot - nearestSemitone) * 100);
+  return deviationCents === 0 ? noteName : `${noteName}${deviationCents > 0 ? '+' : ''}${deviationCents}`;
+}

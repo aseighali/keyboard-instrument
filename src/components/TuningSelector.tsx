@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { RootConfig } from '../tuning/types';
-import { PITCH_CLASSES, makeRoot } from '../tuning/notes';
+import { PITCH_CLASSES, makeRoot, nearestNoteLabel } from '../tuning/notes';
 import { MODES, DASTGAHS, defaultDastgahChoice, type TuningChoice } from '../tuning/tuningChoice';
 import type { StoredPreset } from '../audio/PresetStore';
 import type { RowLayout } from '../tuning/keyMap';
@@ -55,6 +55,11 @@ export function TuningSelector({
   const [customCents, setCustomCents] = useState('0, 150, 350, 500, 700, 850, 1050');
 
   const dastgahChoice = choice.category === 'dastgah' ? choice : null;
+
+  const customCentsPreview = customCents
+    .split(',')
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isFinite(n) && n >= 0 && n < 1200);
 
   return (
     <section className="panel">
@@ -168,6 +173,12 @@ export function TuningSelector({
               <span>Cents from root (comma separated)</span>
               <input value={customCents} onChange={(e) => setCustomCents(e.target.value)} />
             </label>
+            {customCentsPreview.length > 0 && (
+              <p className="hint">
+                Notes (relative to {root.pitchClass}
+                {root.octave}): {customCentsPreview.map((c) => nearestNoteLabel(root, c / 100)).join(' · ')}
+              </p>
+            )}
             <button
               type="button"
               onClick={() => {

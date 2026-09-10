@@ -5,6 +5,7 @@ import {
   Smolken,
   Mallet,
   Mellotron,
+  Versilian,
   getElectricPianoNames,
   getSmolkenNames,
   getMalletNames,
@@ -14,8 +15,16 @@ import {
 import type { AudioEngine } from '../audio/AudioEngine';
 import type { SoundfontInstrument } from '../audio/instruments';
 import { displayInstrumentName } from './usePreloadedInstruments';
+import { CHURCH_ORGAN_PATHS, HARPSICHORD_PATHS } from '../audio/versilianInstruments';
 
-export type PremiumLibraryId = 'splendid-piano' | 'electric-piano' | 'smolken-bass' | 'mallet' | 'mellotron';
+export type PremiumLibraryId =
+  | 'splendid-piano'
+  | 'electric-piano'
+  | 'smolken-bass'
+  | 'mallet'
+  | 'mellotron'
+  | 'church-organ'
+  | 'harpsichord';
 
 export interface PremiumLibraryDef {
   id: PremiumLibraryId;
@@ -35,6 +44,8 @@ export const PREMIUM_LIBRARIES: PremiumLibraryDef[] = [
   { id: 'smolken-bass', label: 'Double Bass - Smolken (arco/pizzicato)', names: getSmolkenNames() },
   { id: 'mallet', label: 'Mallet percussion - VCSL (marimba, vibraphone, ...)', names: getMalletNames() },
   { id: 'mellotron', label: 'Mellotron (vintage tape samples)', names: getMellotronNames() },
+  { id: 'church-organ', label: 'Church Organ - VCSL (pipe organ)', names: Object.keys(CHURCH_ORGAN_PATHS) },
+  { id: 'harpsichord', label: 'Harpsichord - VCSL (Italian/French/Flemish/English)', names: Object.keys(HARPSICHORD_PATHS) },
 ];
 
 export function usePremiumInstruments(engine: AudioEngine) {
@@ -64,6 +75,12 @@ export function usePremiumInstruments(engine: AudioEngine) {
               break;
             case 'mellotron':
               sampler = Mellotron(ctx, { instrument: name!, destination });
+              break;
+            case 'church-organ':
+              sampler = Versilian(ctx, { instrument: CHURCH_ORGAN_PATHS[name!], destination });
+              break;
+            case 'harpsichord':
+              sampler = Versilian(ctx, { instrument: HARPSICHORD_PATHS[name!], destination });
               break;
           }
           cacheRef.current.set(cacheKey, sampler);

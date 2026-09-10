@@ -1,5 +1,5 @@
 import type { RootConfig, TuningSystem } from './types';
-import { PITCH_CLASSES, midiNumberOf } from './notes';
+import { nearestNoteLabel } from './notes';
 
 /**
  * Isomorphic playing grid: within a row, moving right always steps to the next scale degree.
@@ -148,7 +148,7 @@ export function isMusicalKey(code: string): boolean {
 
 export interface ResolvedNote {
   frequency: number;
-  /** Short label to render on the key cap, e.g. "D#4", "n2 +1". */
+  /** Short label to render on the key cap, e.g. "D#4", or "D4+27" for an off-12-TET degree. */
   label: string;
 }
 
@@ -167,17 +167,9 @@ export function resolveNote(
   const scaleSlot = tuning.slots[degreeInOctave];
 
   const frequency = root.frequency * Math.pow(2, octaveWrap + scaleSlot.cents / 1200);
-
-  let label: string;
-  if (tuning.pitchClassBased) {
-    const rootMidi = midiNumberOf(root.pitchClass, root.octave);
-    const noteMidi = Math.round(rootMidi + octaveWrap * 12 + scaleSlot.cents / 100);
-    const pitchIndex = ((noteMidi % 12) + 12) % 12;
-    const octave = Math.floor(noteMidi / 12) - 1;
-    label = `${PITCH_CLASSES[pitchIndex]}${octave}`;
-  } else {
-    label = octaveWrap === 0 ? scaleSlot.label : `${scaleSlot.label} ${octaveWrap > 0 ? '+' : ''}${octaveWrap}`;
-  }
+  // pitchClassBased tunings always land on whole semitones, so this naturally comes out as an
+  // exact note name for them, and as "nearest note + cents deviation" (e.g. "D4+27") otherwise.
+  const label = nearestNoteLabel(root, octaveWrap * 12 + scaleSlot.cents / 100);
 
   return { frequency, label };
 }
