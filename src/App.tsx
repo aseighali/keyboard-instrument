@@ -4,6 +4,7 @@ import { TuningSelector } from './components/TuningSelector';
 import { InstrumentSelector } from './components/InstrumentSelector';
 import { VolumeControl } from './components/VolumeControl';
 import { ReverbControl } from './components/ReverbControl';
+import { InfoTooltip } from './components/InfoTooltip';
 import { useAudioEngine } from './hooks/useAudioEngine';
 import { useKeyboardInput } from './hooks/useKeyboardInput';
 import { useSoundfonts } from './hooks/useSoundfonts';
@@ -96,6 +97,22 @@ export default function App() {
     dynamicsIntensity,
     pullOffEnabled,
   );
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.code !== 'ArrowUp' && e.code !== 'ArrowDown') return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      e.preventDefault();
+      const delta = e.code === 'ArrowUp' ? 1 : -1;
+      setRoot((prev) => {
+        const nextOctave = Math.min(6, Math.max(2, prev.octave + delta));
+        return nextOctave === prev.octave ? prev : makeRoot(prev.pitchClass, nextOctave);
+      });
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   useEffect(() => {
     engine.setVolume(volume);
@@ -264,22 +281,26 @@ export default function App() {
           onSoundfontKitChange={setSoundfontKit}
           onSelectPreloadedInstrument={handleSelectPreloadedInstrument}
         />
-        <section className="panel">
-          <h2>Output</h2>
+        <details className="panel" open>
+          <summary>
+            <h2>Settings</h2>
+          </summary>
           <label className="field field--checkbox">
             <input
               type="checkbox"
               checked={dynamicsEnabled}
               onChange={(e) => setDynamicsEnabled(e.target.checked)}
             />
-            <span>Dynamics from typing speed</span>
+            <span className="field-label">
+              Dynamics from typing speed
+              <InfoTooltip>
+                No computer keyboard reports how hard a key was pressed, so this approximates it
+                from how fast you're typing: faster passages play louder/brighter, like a real
+                instrument responding to how hard you play. Turn off for flat, constant-velocity
+                playback instead.
+              </InfoTooltip>
+            </span>
           </label>
-          <p className="hint">
-            No computer keyboard reports how hard a key was pressed, so this approximates it from
-            how fast you're typing &mdash; faster passages play louder/brighter, like a real
-            instrument responding to how hard you play. Turn off for flat, constant-velocity
-            playback instead.
-          </p>
           {dynamicsEnabled && (
             <label className="field">
               <span>Dynamics intensity ({Math.round(dynamicsIntensity * 100)}%)</span>
@@ -300,13 +321,15 @@ export default function App() {
               checked={pullOffEnabled}
               onChange={(e) => setPullOffEnabled(e.target.checked)}
             />
-            <span>Pull-off (guitar-style)</span>
+            <span className="field-label">
+              Pull-off (guitar-style)
+              <InfoTooltip>
+                While holding a note, press and release another note without releasing the first:
+                on release, the held note sounds again on its own, like lifting a fretting finger
+                off a guitar string to reveal the note underneath.
+              </InfoTooltip>
+            </span>
           </label>
-          <p className="hint">
-            While holding a note, press and release another note without releasing the first
-            &mdash; on release, the held note sounds again on its own, like lifting a fretting
-            finger off a guitar string to reveal the note underneath.
-          </p>
           <hr />
           <VolumeControl volume={volume} onChange={setVolume} />
           <hr />
@@ -318,7 +341,7 @@ export default function App() {
             customParams={reverbCustomParams}
             onCustomParamsChange={setReverbCustomParams}
           />
-        </section>
+        </details>
       </div>
 
       <KeyboardView tuning={tuning} root={root} pressed={pressed} keyMap={keyMap} />

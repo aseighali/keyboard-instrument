@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Instrument } from '../audio/instruments';
 import { PITCH_CLASSES } from '../tuning/notes';
 import type { SoundfontFile } from '../hooks/useSoundfonts';
 import { displayInstrumentName, type SoundfontKit } from '../hooks/usePreloadedInstruments';
 import type { PremiumLibraryDef, PremiumLibraryId } from '../hooks/usePremiumInstruments';
+import { InfoTooltip } from './InfoTooltip';
 
 interface InstrumentSelectorProps {
   instruments: Instrument[];
@@ -76,6 +77,12 @@ export function InstrumentSelector({
     activePremium?.libraryId ?? '',
   );
 
+  // Keep the dropdown in sync when a premium instrument is selected from outside this
+  // component (e.g. the default grand piano selected on first load).
+  useEffect(() => {
+    if (activePremium?.libraryId) setPremiumLibraryChoice(activePremium.libraryId);
+  }, [activePremium?.libraryId]);
+
   const sampleInstruments = instruments.filter((i) => i.kind === 'sample');
   const chosenLibrary = premiumLibraries.find((l) => l.id === premiumLibraryChoice) ?? null;
 
@@ -130,12 +137,14 @@ export function InstrumentSelector({
     <section className="panel">
       <h2>Sound</h2>
 
-      <p className="hint">
-        Real sampled instruments from dedicated, purpose-built libraries (not a generic MIDI set) &mdash; the
-        best quality this app offers, no upload needed.
-      </p>
       <label className="field">
-        <span>Library</span>
+        <span className="field-label">
+          Library
+          <InfoTooltip>
+            Real sampled instruments from dedicated, purpose-built libraries (not a generic MIDI
+            set): the best quality this app offers, no upload needed.
+          </InfoTooltip>
+        </span>
         <select
           value={premiumLibraryChoice}
           onChange={(e) => handlePremiumLibraryChange(e.target.value as PremiumLibraryId | '')}
@@ -190,11 +199,13 @@ export function InstrumentSelector({
       )}
 
       <details>
-        <summary>Upload a sound</summary>
-        <p className="hint">
-          Upload a single-note sample (wav/mp3/ogg) and tell it what pitch the sample was recorded at &mdash; it
-          will be pitch-shifted across the keyboard from there.
-        </p>
+        <summary className="field-label">
+          Upload a sound
+          <InfoTooltip>
+            Upload a single-note sample (wav/mp3/ogg) and tell it what pitch the sample was
+            recorded at: it will be pitch-shifted across the keyboard from there.
+          </InfoTooltip>
+        </summary>
         <label className="field">
           <span>Audio file</span>
           <input ref={fileRef} type="file" accept="audio/*" />
@@ -233,12 +244,15 @@ export function InstrumentSelector({
 
       <hr />
 
-      <p className="hint">
-        General MIDI instruments, streamed on first use from a free public sample library &mdash; wider
-        selection (guitars, organs, world instruments, ...) but lower quality than the libraries above.
-      </p>
       <label className="field">
-        <span>Quality</span>
+        <span className="field-label">
+          Quality
+          <InfoTooltip>
+            General MIDI instruments, streamed on first use from a free public sample library:
+            wider selection (guitars, organs, world instruments, ...) but lower quality than the
+            libraries above.
+          </InfoTooltip>
+        </span>
         <select value={soundfontKit} onChange={(e) => onSoundfontKitChange(e.target.value as SoundfontKit)}>
           <option value="MusyngKite">High quality (larger download)</option>
           <option value="FluidR3_GM">Fast (smaller download)</option>
@@ -306,20 +320,23 @@ export function InstrumentSelector({
       )}
 
       <details>
-        <summary>Upload your own SoundFont (.sf2)</summary>
-        <p className="hint">
-          For a specific file you already have, or one not in the preloaded list above. Free official downloads:{' '}
-          <strong>FluidR3_GM.sf2</strong> from the{' '}
-          <a href="https://musescore.org/en/handbook/2/soundfonts-and-sfz-files" target="_blank" rel="noreferrer">
-            MuseScore handbook
-          </a>{' '}
-          or{' '}
-          <a href="https://www.polyphone.io/en/soundfonts/instrument-sets/250-fluidr3-gm" target="_blank" rel="noreferrer">
-            Polyphone
-          </a>
-          , and <strong>MuseScore_General.sf2</strong> (bundled with MuseScore, MIT licensed). Upload once; it's
-          stored in this browser and every instrument inside it shows up above from then on.
-        </p>
+        <summary className="field-label">
+          Upload your own SoundFont (.sf2)
+          <InfoTooltip>
+            For a specific file you already have, or one not in the preloaded list above. Free
+            official downloads: <strong>FluidR3_GM.sf2</strong> from the{' '}
+            <a href="https://musescore.org/en/handbook/2/soundfonts-and-sfz-files" target="_blank" rel="noreferrer">
+              MuseScore handbook
+            </a>{' '}
+            or{' '}
+            <a href="https://www.polyphone.io/en/soundfonts/instrument-sets/250-fluidr3-gm" target="_blank" rel="noreferrer">
+              Polyphone
+            </a>
+            , and <strong>MuseScore_General.sf2</strong> (bundled with MuseScore, MIT licensed).
+            Upload once; it's stored in this browser and every instrument inside it shows up above
+            from then on.
+          </InfoTooltip>
+        </summary>
         <label className="field">
           <span>SoundFont file (.sf2)</span>
           <input ref={sfFileRef} type="file" accept=".sf2" />

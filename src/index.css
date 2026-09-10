@@ -175,7 +175,7 @@ button:disabled {
   text-decoration: underline;
 }
 
-details {
+details:not(.panel) {
   border-top: 1px solid var(--border);
   padding-top: 8px;
   display: flex;
@@ -183,7 +183,7 @@ details {
   gap: 8px;
 }
 
-details summary {
+details:not(.panel) summary {
   cursor: pointer;
   font-weight: 600;
   font-size: 13px;
@@ -192,6 +192,94 @@ details summary {
 .hint {
   font-size: 12px;
   color: var(--text);
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid var(--key-border);
+  color: var(--text);
+  font-size: 10px;
+  font-style: italic;
+  font-weight: 700;
+  cursor: help;
+  flex-shrink: 0;
+}
+
+.info-tip__bubble {
+  display: none;
+  position: absolute;
+  z-index: 20;
+  bottom: 130%;
+  left: 0;
+  width: 260px;
+  max-width: 70vw;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  font-style: normal;
+  font-weight: 400;
+  color: var(--text);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  cursor: auto;
+}
+
+.info-tip:hover .info-tip__bubble,
+.info-tip:focus .info-tip__bubble,
+.info-tip:focus-within .info-tip__bubble {
+  display: block;
+}
+
+.panel > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.panel > summary::-webkit-details-marker {
+  display: none;
+}
+
+.panel > summary h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel > summary h2::before {
+  content: '\25B8';
+  font-size: 11px;
+  transition: transform 0.1s;
+  display: inline-block;
+}
+
+details.panel[open] > summary h2::before {
+  transform: rotate(90deg);
+}
+
+details.panel {
+  gap: 0;
+}
+
+details.panel[open] {
+  gap: 10px;
+}
+
+details.panel[open] > summary {
+  margin-bottom: 0;
 }
 
 .error {

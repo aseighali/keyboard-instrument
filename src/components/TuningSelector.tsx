@@ -251,13 +251,13 @@ export function TuningSelector({
 
       <p className="hint">
         {rowLayout.mode === 'fixed' &&
-          `Each row starts ${rowLayout.steps} step${rowLayout.steps === 1 ? '' : 's'} higher than the row below it — same shape everywhere, like moving to an adjacent guitar string. Notes repeat across rows on purpose. This is the isomorphic layout.`}
+          `Each row starts ${rowLayout.steps} step${rowLayout.steps === 1 ? '' : 's'} higher than the row below it, same shape everywhere, like moving to an adjacent guitar string. Notes repeat across rows on purpose. This is the isomorphic layout.`}
         {rowLayout.mode === 'piano' &&
           (pianoUnavailable
-            ? 'Real black/white piano shape only applies to Chromatic tuning — this scale doesn\'t split cleanly into "white" and "black" keys, so it\'s using the continuous layout instead for now.'
-            : 'Home row is the white keys (natural notes) in order; the row above is the black keys, offset to sit between two whites — same shape as a real piano, including the two gaps where a real piano has no black key (E–F, B–C). A few upper-row keys are intentionally silent.')}
+            ? 'Real black/white piano shape only applies to Chromatic tuning; this scale doesn\'t split cleanly into "white" and "black" keys, so it\'s using the continuous layout instead for now.'
+            : 'Home row is the white keys (natural notes) in order; the row above is the black keys, offset to sit between two whites, same shape as a real piano, including the two gaps where a real piano has no black key (E–F, B–C). A few upper-row keys are intentionally silent.')}
         {rowLayout.mode === 'continuous' &&
-          'Each row continues exactly where the row below left off — one long ascending run, no repeated or skipped notes, but the shape is different in every row. Not isomorphic.'}
+          'Each row continues exactly where the row below left off: one long ascending run, no repeated or skipped notes, but the shape is different in every row. Not isomorphic.'}
       </p>
     </section>
   );
